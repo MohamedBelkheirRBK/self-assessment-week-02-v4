@@ -47,6 +47,24 @@ var checkNewData = function(data) {
   }
 };
 
+
+var parse = function(data, i) {
+  var timestamp = moment(data.results[i].createdAt).format('h:mm:ss a');
+      var $result = $('<li></li>').attr('data-username', data.results[i].username);
+      var $message = $('<p></p>').text(data.results[i].text);
+      var $userName = $('<a></a>').text(data.results[i].username).addClass('onlyUser');
+      var $likeUser = $('<a></a>').addClass('addUser').text(': ');
+      var $timeStamp = $('<span></span>').text(timestamp);
+
+      if (userSelectedGroup[data.results[i].username]) {
+        $message.addClass('highlight');
+      }
+
+      $result.html([$userName, $timeStamp, $likeUser, $message]);
+
+      return $result;
+}
+
 var userSelectedGroup = {};
 var newestDate = new Date();
 var userSelected;
@@ -61,19 +79,8 @@ var displayData = function(data, user) {
     newestDate = new Date(data.results[0].createdAt);
 
     if (user === data.results[i].username || !user) {
-      var timestamp = moment(data.results[i].createdAt).format('h:mm:ss a');
-      var $result = $('<li></li>').attr('data-username', data.results[i].username);
-      var $message = $('<p></p>').text(data.results[i].text);
-      var $userName = $('<a></a>').text(data.results[i].username).addClass('onlyUser');
-      var $likeUser = $('<a></a>').addClass('addUser').text(': ');
-      var $timeStamp = $('<span></span>').text(timestamp);
-
-      if (userSelectedGroup[data.results[i].username]) {
-        $message.addClass('highlight');
-      }
-
-      $result.html([$userName, $timeStamp, $likeUser, $message]);
-      $results.push($result);
+      
+      $results.push(parse(data, i));
       resultCount++;
     }
     i++;
@@ -104,18 +111,24 @@ var displayData = function(data, user) {
   });
 };
 
+var newPost = function(data) {
+  var result = parse({results: [data]}, 0);
+  $('ul').prepend(result)
+}
+
 var postData = function(message, username) {
+  var data = {
+      username: username,
+      text: message,
+      createdAt: new Date()
+    };
+    console.log(data)
   $.ajax({
     url: SERVER_URL,
     contentType: 'application/json',
     type: 'POST',
-    data: JSON.stringify({
-      username: username,
-      text: message
-    }),
-    success: function(data) {
-      console.log('Success!', data);
-    },
+    data: JSON.stringify(data),
+    success: newPost.bind(null, data),
     error: function(data) {
       console.log(data);
     }
